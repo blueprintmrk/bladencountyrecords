@@ -1,0 +1,370 @@
+# -*- coding: utf-8 -*-
+# Switchyard Wordpress Fabfile
+# Copied from Chicago Tribune News Applications fabfile
+# No copying allowed
+
+import os
+import subprocess
+import urllib
+
+from fabric.api import *
+from fabric.contrib.console import confirm
+from fabric.context_managers import cd
+
+from getpass import getpass
+
+"""
+Base configuration
+"""
+env.project_name = "PROJECT_NAME"
+env.wpdomain = 'PROJECT_NAME.dev'
+env.path = os.getcwd()
+
+# Do you want to use git or svn for deployment?
+env.strategy = 'git'
+
+# If you said svn, where should I checkout from?
+env.svnrepo = ''
+
+# If you said git, where should I clone from and which branch should I checkout?
+env.gitrepo = 'git://github.com:switchyard/PROJECT_NAME'
+env.gitbranch = 'master'
+
+# These are the credentials for the wordpress. They should match your wp-config.php.
+env.db_host = 'localhost'
+env.db_name = 'DB_NAME'
+env.db_wpuser_name = 'DB_USER'
+env.db_wpuser_pass = 'DB_PASSWORD' #make up something complicated for the password
+
+# Super user name and pass for adding users and databases to mysql
+env.db_root_user = "root"
+env.db_root_pass = "root"
+
+# This is the config file that will get installed on bootstrap
+env.config_file = 'wp-config-mamp.php'
+
+# Fix permissions throughout the deployment process. You may need to use this
+# if perms are getting messed up.
+env.fix_perms = False
+
+# This defaults the run and sudo functions to local, so we don't have to duplicate
+# code for local development and deployed servers.
+env.sudo = local
+env.run = local
+
+# Where should I get Wordpress??
+env.wp_tarball = "http://wordpress.org/latest.tar.gz"
+
+"""
+Environments
+"""
+def production():
+    """
+    Work on production environment
+    """
+    env.settings = 'production'
+    env.hosts = ['example.com']
+    env.user = ''
+    env.path = ''
+    env.wpdomain = 'example.com'
+    env.db_root_user = 'wpcustomuser'
+    env.db_root_pass = ''
+    env.config_file = 'wp-config-production.php'
+    env.db_host = 'db.example.com'
+    env.db_name = 'wp_custom_database'
+    check_env()
+
+def staging():
+    """
+    Work on staging environment
+    """
+    env.settings = 'staging'
+    env.hosts = ['staging.example.com']
+    env.user = ''
+    env.path = ''
+    env.wpdomain = 'staging.example.com'
+    env.db_root_user = 'wpsuperuser'
+    env.db_root_pass = ''
+    env.db_host = 'db.example.com'
+    env.db_name = 'wp_custom_database'
+    env.config_file = 'wp-config-staging.php'
+    check_env()
+
+"""
+Commands - setup
+"""
+def git_clone_repo():
+    """
+    Do initial clone of the git repository.
+    """
+    with settings(warn_only=True):
+        run('git clone %(gitrepo)s %(path)s' % env)
+
+def git_checkout():
+    """
+    Pull the latest code on the specified branch.
+    """
+    with cd(env.path):
+        if env.gitbranch != 'master':
+            with settings(warn_only=True):
+                run('git checkout -b %(gitbranch)s origin/%(gitbranch)s' % env)
+        run('git checkout %(gitbranch)s' % env)
+        run('git pull origin %(gitbranch)s' % env)
+
+def svn_checkout():
+    """
+    Checkout the site
+    """
+    env.svn_user = prompt('SVN Username: ')
+    env.svn_pass = getpass('Enter SVN Password: ')
+    
+    with cd(env.path):
+        run('svn co %(repo)s . --username %(svn_user)s --password %(svn_pass)s' % env)
+
+"""
+Commands - deployment
+"""
+def setup():
+    """
+    Setup the site
+    """
+    if env.strategy == 'git':
+        git_clone()
+        git_checkout()
+    elif env.strategy == 'svn':
+        svn_checkout()
+
+    fix_perms()
+
+def deploy():
+    """
+    Deploy new code to the site
+    """
+    if env.strategy == 'git':
+        git_clone()
+        git_checkout()
+    elif env.strategy == 'svn':
+        svn_checkout()
+
+    fix_perms()
+
+
+"""
+Commands - data
+"""
+def bootstrap():
+    print("\nStep 1: Database and basic Wordpress setup")
+
+    with cd(env.path):
+        env.run('cp -P %(config_file)s wp-config.php' % env)
+
+    fix_perms()
+
+    create_db()
+    env.run('curl -s http://%(wpdomain)s/scripts/na-install.php' % env)
+
+    print("\nStep 2: Setup plugins")
+
+    env.run('curl -s http://%(wpdomain)s/scripts/na-setup-plugins.php' % env)
+
+    print("\nStep 3: Cleanup, create blogs")
+
+    env.run('curl -s http://%(wpdomain)s/scripts/na-postinstall.php' % env)
+
+    if confirm("Create child blogs?"): create_blogs()
+
+def enable_xmlrpc():
+    env.run('echo "UPDATE wp_options SET option_value = \'1\' WHERE option_name = \'enable_xmlrpc\';" | mysql --host=%(db_host)s --user=%(db_root_user)s --password=%(db_root_pass)s %(db_name)s' % env)
+
+    
+def create_db():
+    if not env.db_root_pass:
+        env.db_root_pass = getpass("Database password: ")
+
+    env.run('mysqladmin --host=%(db_host)s --user=%(db_root_user)s --password=%(db_root_pass)s create %(db_name)s' % env)
+    env.run('echo "GRANT ALL ON * TO \'%(db_root_user)s\'@\'localhost\' IDENTIFIED BY \'%(db_root_pass)s\';" | mysql --host=%(db_host)s --user=%(db_root_user)s --password=%(db_root_pass)s %(db_name)s' % env)
+
+def load_db(dump_slug='dump'):
+    env.dump_slug = dump_slug
+    if not env.db_root_pass:
+        env.db_root_pass = getpass("Database password: ")
+    with cd(env.path):
+        env.run("bzcat data/%(dump_slug)s.sql.bz2 | sed s/WPDEPLOYDOMAN/%(wpdomain)s/g |mysql --host=%(db_host)s --user=%(db_root_user)s --password=%(db_root_pass)s %(db_name)s" % env)
+
+def dump_db(dump_slug='dump'):
+    env.dump_slug = dump_slug
+    setup_folder_perms()
+    if not env.db_root_pass:
+        env.db_root_pass = getpass("Database password: ")
+    with cd(env.path):
+        env.run("mysqldump --host=%(db_host)s --user=%(db_root_user)s --password=%(db_root_pass)s %(db_name)s |sed s/%(wpdomain)s/WPDEPLOYDOMAN/g |bzip2 > data/%(dump_slug)s.sql.bz2" % env)
+
+def destroy_db():
+    if not env.db_root_pass:
+        env.db_root_pass = getpass("Database password: ")
+
+    with settings(warn_only=True):
+        env.run('mysqladmin -f --host=%(db_host)s --user=%(db_root_user)s --password=%(db_root_pass)s drop %(db_name)s' % env)
+
+def change_div_tags():
+    with settings(warn_only=True):
+        env.run('echo "UPDATE wp_posts SET post_content = REPLACE ( post_content, \'<div\', \'<p\' ) WHERE post_type = \'post\'; UPDATE wp_posts SET post_content = REPLACE ( post_content, \'</div\', \'</p\' ) WHERE post_type = \'post\';" | mysql --host=%(db_host)s --user=%(db_root_user)s --password=%(db_root_pass)s %(db_name)s' % env)
+
+def change_theme(theme='default'):
+    env.theme = theme
+    env.run('echo "UPDATE wp_options SET option_value = \'%(theme)s\' WHERE option_name IN (\'current_theme\', \'template\', \'stylesheet\');" | mysql --host=%(db_host)s --user=%(db_root_user)s --password=%(db_root_pass)s %(db_name)s' % env)
+    
+def destroy_attachments():
+    with cd(env.path):
+        env.run('rm -rf wp-content/blogs.dir')
+
+def reload_db(dump_slug='dump'):
+    destroy_db()
+    create_db()
+    load_db(dump_slug)
+
+def create_blogs():
+    response = "Success"
+    base_cmd = 'curl -s http://%(wpdomain)s/scripts/na-createblog.php' % env
+    i=0
+    while "Success" in response:
+        response = env.run(base_cmd + '?new_blog_index=%s' % i)
+        i+=1
+        print(response)
+    print("Created %s blogs" % str(i-1))
+
+def fix_perms():
+    if env.fix_perms:    
+        env.sudo("chown -Rf %(apache_user)s:%(apache_group)s %(path)s; chmod -Rf ug+rw %(path)s;" % env)
+
+def wrap_media():
+    with cd(env.path):
+        env.run('tar zcf data/media.tgz wp-content/uploads/*')
+    print('Wrapped up media.\n')
+
+def unwrap_media():
+    with cd(env.path):
+        env.run('tar zxf data/media.tgz')
+    print('Unwrapped media.\n')
+
+def put_media():
+    check_env()
+    put('data/media.tgz','%(path)s/data/media.tgz' % env)
+    print('Put media on server.\n')
+
+def get_media():
+    check_env()
+    get('%(path)s/data/media.tgz' % env, 'data/media.tgz')
+    print('Got media from the server.\n')
+
+def put_db(dump_slug='dump'):
+    env.dump_slug = dump_slug
+    check_env()
+
+    put("data/%(dump_slug)s.sql.bz2" % env, '%(path)s/data/%(dump_slug)s.sql.bz2' % env)
+    print('Put db on server.\n')
+
+def get_db(dump_slug='dump'):
+    env.dump_slug = dump_slug
+    check_env()
+    setup_folder_perms()
+
+    get('%(path)s/data/%(dump_slug)s.sql.bz2' % env, "data/%(dump_slug)s.sql.bz2" % env)
+    print('Got db from the server.\n')
+
+def maintenance_down():
+    """ Remove maintenance mode index.html file """
+    if exists("%(path)s/index.html" % env):
+        env.run('mv %(path)s/index.html %(path)s/maintenance.html' % env)
+        print('Maintenance mode index.html disabled.')
+    else:
+        print('Maintenance mode index.html not found.  Site is not in maintenance mode.')
+
+def maintenance_up():
+    """ Setup maintenance mode index.html file """
+    if exists("%(path)s/maintenance.html" % env):
+        env.run('mv %(path)s/maintenance.html %(path)s/index.html' % env)
+        print('Maintenance mode index.html enabled.')
+    else:
+        print('Warning maintenance mode maintenance.html not found. Site can not be put into maintenance mode.')
+
+
+"""
+Deaths, destroyers of worlds
+"""
+def shiva_the_destroyer():
+    """
+    Remove all directories, databases, etc. associated with the application.
+    """
+    try:
+        check_env()
+        env.run('rm -Rf %(path)s/* %(path)s/.*;' % env)
+        destroy_db()
+    except NameError, e:
+        with settings(warn_only=True):
+            env.run('rm .htaccess')
+            env.run('rm wp-config.php')
+        destroy_db()
+
+"""
+Utilities
+"""
+def check_env():
+    require('settings', provided_by=[production, staging ])
+    env.sudo = sudo
+    env.run = run
+
+def setup_folder_perms():
+    """ Setup folder permissions for writeable folders """
+    env.data_dir = "%(path)s/data/" % env
+    env.run('mkdir -p %(data_dir)s' % env )
+
+def get_wordpress():
+    print("Downloading and installing Wordpress...")
+    with cd(env.path):
+        env.run('curl -s %(wp_tarball)s | tar xzf - ' % env)
+        env.run('cp -Rf wordpress/* .')
+        env.run('rm -rf wordpress')
+    print("Done.")
+
+def install_plugin(name, version='latest'):
+    try:
+        from lxml.html import parse
+        from lxml.cssselect import CSSSelector
+    except ImportError:
+        print("I need lxml to do this")
+        exit()
+
+    print("Looking for %s..." % name)
+
+    url = "http://wordpress.org/extend/plugins/%s/" % name
+    p = parse("%sdownload/" % url)
+    sel = CSSSelector('.block-content .unmarked-list a')
+    dload_elems = sel(p)
+
+    if not dload_elems:
+        print("Can't find plugin %s" % name)
+        exit()
+
+    #first is latest
+    if version == 'latest':
+        plugin_zip = dload_elems[0].attrib['href']
+        version = dload_elems[0].text
+    else:
+        plugin_zip = None
+        for e in dload_elems:
+            if e.text == 'version':
+                plugin_zip = e.attrib['href']
+                break
+
+    if not plugin_zip:
+        print("Can't find plugin %s" % name)
+        exit()
+    else:
+        print("Found version %s of %s, installing..." % (version, name) )
+        with cd(env.path + "/wp-content/plugins"):
+            env.run('curl -s %s -o %s.%s.zip' % (plugin_zip, name, version) )
+            env.run('unzip -n %s.%s.zip' % (name, version) )
+
+        if raw_input("Read instructions for %s? [Y|n]" % name) in ("","Y"):
+            subprocess.call(['open', url])

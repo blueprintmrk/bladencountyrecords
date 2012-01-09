@@ -1,0 +1,78 @@
+/* Meta Boxes */
+#postcustom {
+	display:none;
+}
+ 
+/** Plugin - Custom Field Template */
+.my_meta_control .dl_textarea dt * {
+	display:none;
+}
+.my_meta_control #cft_selectbox {
+	display:none;
+}
+.my_meta_control .dl_textarea dt span,
+.my_meta_control .dl_textarea dt span * {
+	display:block;
+}
+body #cft dt {
+	text-align:left;
+}
+body #cft dt label {
+	line-height:2em;
+}
+body #cft dd {
+	margin-bottom:8px;
+}
+body #cft dd input[type="text"] {
+	width:100%;
+}
+#poststuff .my_meta_control .inside {
+	margin:12px 12px 4px;
+}
+.my_meta_control .mceEditor {
+	display:block;
+	-webkit-border-radius: 6px;
+	-moz-border-radius: 6px;
+	border-radius: 6px;
+	border:1px solid #DFDFDF;
+}
+body .my_meta_control .mceStatusbar {
+	padding-bottom:1px;
+}
+#post-body .my_meta_control .wp_themeSkin .mceStatusbar a.mceResize {
+	top:0;
+}
+#post-body .my_meta_control .wp_themeSkin .mceStatusbar div {
+	text-transform:uppercase;
+	font-size:11px;
+	color:#999;
+	padding:4px 6px 2px;
+}
+.custom_upload_buttons{
+    cursor: default;
+    padding: 8px 0;
+}
+
+.custom_upload_buttons a{
+    cursor: pointer;
+    padding: 0 0 5px 10px;    
+}
+
+
+.woo_metaboxes_table .mceLayout{
+  background-color: #fff;
+}
+
+.woo_metaboxes_table .use-tinymce{
+  border: 1px solid #DDD;
+  width: 99%;
+  margin-bottom: 10px;
+  -moz-border-radius:  3px;
+  -webkit-border-radius:  3px;  
+  border-radius:  3px;  
+}
+
+#adminmenu .wp-menu-image a{
+  height: 30px;
+  overflow: hidden;
+}
