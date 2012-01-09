@@ -13,7 +13,7 @@ Template Name: Home
                 <div id="rotating-banner">
                 <ul>
 
-		        <?php $banner = new WP_Query(array('post_type'=>'slideshow', 'posts_per_page'=>4, 'meta_key'=>'slideshow_active', 'meta_value'=>'on')); ?>
+		        <?php $banner = new WP_Query(array('post_type'=>'slideshow', 'posts_per_page'=>4)); ?>
 		        <?php while ($banner->have_posts()): $banner->the_post();?>
                 <li ><a href="<?php echo meta('slideshow_link') ?>"><img src="<?php echo meta('slideshow_image') ?>" /></a> 
                 </li>
@@ -56,9 +56,7 @@ Template Name: Home
 
             </div><!-- /.content -->
         </div><!-- /#main -->
-  		<div id="sidebar">
-  		    <?php get_sidebar(); ?>
-  		</div>
+	    <?php get_sidebar(); ?>
 
     </div><!-- /#content -->
 				

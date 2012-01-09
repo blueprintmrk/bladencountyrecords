@@ -291,7 +291,7 @@ background-position: -392px -30px;
 
 /* --- content --- */
 h1.title{
-    color:#aaa;
+    color:#fff;
     display: none;
     position:relative;
 }
@@ -438,6 +438,9 @@ a.more-link:hover{
 }
 .post-date{
     margin: 0;
+}                 
+.post-thumbnail{
+  margin-bottom: 20px;
 }
 .post .entry{entry
     margin-bottom: 0;

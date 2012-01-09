@@ -1,9 +1,11 @@
+<div id="sidebar">
+
     <div id="featured-release" class="mini widget">
         <h2>
             Featured Release
         </h2>    
         <?php 
-        $albums = new WP_Query(array('post_type'=>'album', 'meta_key'=>'featured', 'meta_value'=>true, 'posts_per_page'=>1 ));
+        $albums = new WP_Query(array('post_type'=>'album', /* 'meta_key'=>'featured', 'meta_value'=>true, */'posts_per_page'=>1 ));
         $count = 0;
         while($albums->have_posts()): $albums->the_post(); $count++;
         ?>
@@ -11,7 +13,7 @@
             <a href="<?php the_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases"><?php the_post_thumbnail(array(84,84)); ?></a>
         </div>
         <div class="album-details">
-            <a href="<?php the_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases" class="album-title"><strong>"<?php the_title(get_the_album_artist(get_the_ID())); ?></strong><br>
+            <a href="<?php the_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases" class="album-title"><strong><?php the_album_artist(get_the_ID()); ?></strong><br>
             <em><?php the_title(); ?></em></a><br>
         </div>
         <div class="store-links">
@@ -41,7 +43,7 @@
         </h2>
         <ul>
             <?php 
-            $artists = new WP_Query(array('post_type'=>'artist', 'meta_key'=>'active', 'meta_value'=>'on' ));
+            $artists = new WP_Query(array('post_type'=>'artist', /* 'meta_key'=>'active', 'meta_value'=>'on' */ ));
             $count = 0;
             while($artists->have_posts()): $artists->the_post(); $count++;
             ?>
@@ -88,3 +90,5 @@
             </li>
         </ul>
     </div>
+
+</div>

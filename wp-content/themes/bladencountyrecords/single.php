@@ -62,9 +62,7 @@
         
 		</div><!-- #main -->
         
-        <div id="sidebar">
         <?php get_sidebar(); ?>
-        </div><!-- /#sidebar -->
 
 
     </div><!-- #content -->

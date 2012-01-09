@@ -51,6 +51,7 @@ function artist_init()
         'show_ui' => true, 
         'query_var' => true,
         'capability_type' => 'post',
+        'rewrite'=> array('slug'=>'artists'),
         'hierarchical' => false,
         'has_archive' => true,
         'menu_icon' => get_template_directory_uri() .'/includes/icons/image.png',
@@ -128,6 +129,7 @@ function album_init()
             "cb" => "<input type=\"checkbox\" />",
             "title" => "Album Name",      
             "featured" => "Is Featured?",
+            "thumbnail" => "Album Art"
         );
 
         return $columns;
@@ -142,16 +144,44 @@ function album_init()
               if(meta('album_featured') == 'on'){
                   echo 'Featured';                  
               }
-          break;          
+          break;       
+          case 'banner_image':
+              if(has_post_thumbnail()){
+                  echo '<img src="' . meta('banner_image') . '" />';                  
+              }
+          break;
+             
         }
     }       
 
     function album_metaboxes( $meta_boxes ) {
 
+       	 $meta_boxes[] = array(
+       		'id' => 'album_price',
+       		'title' => 'Album Price',
+       		'pages' => array('album'), // post type
+       		'context' => 'side',
+       		'priority' => 'default',
+       		'show_names' => true, // Show field names on the left
+       		'fields' => array(
+       			array(
+       				'name' => 'Domestic Price',
+       				'id' => 'domestic_price',
+       				'type' => 'text_money'
+       			),      
+       			array(
+       				'name' => 'International Price',
+       				'id' => 'intl_price',
+       				'type' => 'text_money'
+       			),
+       			
+       		),
+       	 );
+
     	 $meta_boxes[] = array(
     		'id' => 'album_options',
-    		'title' => 'Album Details',
-    		'pages' => array('banner'), // post type
+    		'title' => 'Album Release Date',
+    		'pages' => array('album'), // post type
     		'context' => 'normal',
     		'priority' => 'default',
     		'show_names' => true, // Show field names on the left
@@ -161,19 +191,13 @@ function album_init()
     				'id' => 'album_release_date',
     				'type' => 'text_date_timestamp',
     			),
-    			array(
-    				'name' => 'Active?',
-    				'desc' => 'Check this to make this banner visible to site visitors.',
-    				'id' => 'banner_active',
-    				'type' => 'checkbox'
-    			),
     		),
     	 );
 
     	return $meta_boxes;
     }
 
-    add_filter( 'cmb_meta_boxes', 'banner_metaboxes' );
+    add_filter( 'cmb_meta_boxes', 'album_metaboxes' );
 
     add_action('do_meta_boxes', 'album_image_box');
 
@@ -263,8 +287,10 @@ function banner_init()
     				'name' => 'Active?',
     				'desc' => 'Check this to make this banner visible to site visitors.',
     				'id' => 'banner_active',
-    				'type' => 'checkbox'
+    				'type' => 'taxonomy_multicheck',
+    				'taxonomy' => 'featured_banner'
     			),
+
     		),
     	 );
 
@@ -282,7 +308,6 @@ function banner_init()
             "cb" => "<input type=\"checkbox\" />",
             "title" => "Slide Name",
             "banner_image" => "Banner Image",      
-            "active" => "Is Active?",      
             "featured_banner" => "Is Active?"
             
         );
@@ -300,11 +325,15 @@ function banner_init()
                   echo '<img src="' . meta('banner_image') . '" />';                  
               }
               break;
-          case "active":
-              if(meta('banner_active') == 'on'){
-                  echo 'Active';                  
+          case "featured_banner":
+              $terms = get_the_terms($post->ID, 'featured_banner');
+              if(is_array($terms)){
+                foreach ( $terms as $term )
+                    $post_terms[] = "<a href='edit.php?post_type={$post_type}&featured_banner={$term->slug}'> " . esc_html(sanitize_term_field('name', $term->name, $term->term_id, $taxonomy, 'edit')) . "</a>";
+                echo join( ', ', $post_terms );                  
               }
-              break;
+              break;          
+              
         }
     }             
 
@@ -345,7 +374,17 @@ function slideshow_init()
     ); 
     
     register_post_type('slideshow', $args);
-
+    register_taxonomy(  
+        'featured_slideshow',  
+        'slideshow',  
+        array(  
+         'hierarchical' => false,  
+         'label' => 'Featured Slide',  
+         'query_var' => true,
+         'public' => false,  
+         'rewrite' => array('slug'=>'featured')  
+        )  
+    ); 
     function slideshow_metaboxes( $meta_boxes ) {
 
     	 $meta_boxes[] = array(
@@ -371,10 +410,11 @@ function slideshow_init()
     				'save_id' => true, // save ID using true
     			),
     			array(
-    				'name' => 'Active?',
+    				'name' => 'Active Slide?',
     				'desc' => 'Check this to make this slide visible to site visitors.',
     				'id' => 'slideshow_active',
-    				'type' => 'checkbox'
+    				'type' => 'taxonomy_multicheck',
+    				'taxonomy' => 'featured_slideshow'
     			),
     		),
     	 );
@@ -393,7 +433,7 @@ function slideshow_init()
             "cb" => "<input type=\"checkbox\" />",
             "title" => "Slide Name",
             "slide_image" => "Slide Image",      
-            "active" => "Is Active?",
+            "featured_slideshow" => "Is Active?"            
         );
 
         return $columns;
@@ -409,11 +449,15 @@ function slideshow_init()
                 echo '<img src="' . meta('slideshow_image') . '" />';                  
             }
             break;
-            case 'active':
-            if(meta('slideshow_active') == 'on'){
-                echo 'Active';                  
-            }
-            break;
+            case "featured_slideshow":
+                $terms = get_the_terms($post->ID, 'featured_slideshow');
+                if(is_array($terms)){
+                  foreach ( $terms as $term )
+                      $post_terms[] = "<a href='edit.php?post_type={$post_type}&featured_slideshow={$term->slug}'> " . esc_html(sanitize_term_field('name', $term->name, $term->term_id, $taxonomy, 'edit')) . "</a>";
+                  echo join( ', ', $post_terms );                  
+                }
+            break;          
+            
         }
     }             
 }
@@ -436,7 +480,7 @@ function the_album_artist($album_id){
 
     function get_the_album_artist($album_id){
         $album = get_post($album_id);
-        return "not implemented";
+        return "Oax";
     }   
 
 if (!is_admin()) add_action( 'wp_print_scripts', 'syc_add_javascript' );

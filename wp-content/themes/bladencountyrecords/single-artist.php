@@ -5,8 +5,8 @@
 	// Get the metadata for the current post.
 	$post_meta = get_post_custom( $post->ID );
 	
-	$title_before = '<div class="post-title-wrap">' . "\n" . '<h1 class="title">' . '<a href="' . get_permalink( get_the_ID() ) . '" rel="bookmark" title="' . the_title_attribute( array( 'echo' => 0 ) ) . '">';
-	$title_after = '</a>' . '</h1>' . "\n" . '</div><!-- /.post-title-wrap -->';
+	$title_before = '<div class="post-title-wrap">' . "\n" . '<h1 class="title">';
+	$title_after = '</h1>' . "\n" . '</div><!-- /.post-title-wrap -->';
 ?> 
 
 	<?php if ( $woo_options[ 'woo_breadcrumbs_show' ] == 'true' ) { ?>
@@ -48,13 +48,7 @@
 				</div>
                                 
             </div><!-- .post -->
-            
-            <div id="post-entries">
-	            <div class="nav-prev fl"><?php previous_post_link( '%link', '%title' ); ?></div>
-	            <div class="nav-next fr"><?php next_post_link( '%link', '%title' ); ?></div>
-	            <div class="fix"></div>
-	        </div><!-- #post-entries -->
-                                                
+                                                           
 		<?php
 				} // End WHILE Loop
 			} else {
@@ -66,9 +60,7 @@
         
 		</div><!-- #main -->
         
-        <div id="sidebar">
         <?php get_sidebar(); ?>
-        </div><!-- /#sidebar -->
 
 
     </div><!-- #content -->

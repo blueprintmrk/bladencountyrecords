@@ -56,7 +56,7 @@
 		        	<span class="site-description"><?php bloginfo('description'); ?></span>
 			    </div><!-- /#logo -->
 			    <div id="banner">   
-			        <?php $banner = new WP_Query(array('post_type'=>'banner', 'posts_per_page'=>1, 'meta_key'=>'banner_active', 'meta_value'=>'on')); ?>
+			        <?php $banner = new WP_Query(array('post_type'=>'banner', 'posts_per_page'=>1)); ?>
 			        <?php while ($banner->have_posts()): $banner->the_post();?>
                     
                     <a href="<?php echo meta('banner_link') ?>"><img src="<?php echo meta('banner_image') ?>" /></a> 
