@@ -10,10 +10,10 @@
         while($albums->have_posts()): $albums->the_post(); $count++;
         ?>
         <div class="album-art">
-            <a href="<?php the_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases"><?php the_post_thumbnail(array(84,84)); ?></a>
+            <a href="<?php echo get_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases"><?php the_post_thumbnail(array(84,84)); ?></a>
         </div>
         <div class="album-details">
-            <a href="<?php the_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases" class="album-title"><strong><?php the_album_artist(get_the_ID()); ?></strong><br>
+            <a href="<?php echo get_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases" class="album-title"><strong><?php the_album_artist(get_the_ID()); ?></strong><br>
             <em><?php the_title(); ?></em></a><br>
         </div>
         <div class="store-links">

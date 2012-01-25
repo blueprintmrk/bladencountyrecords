@@ -83,7 +83,56 @@ function artist_init()
               }
           break;          
         }
-    }             
+    }
+
+    //hook into the init action and call create_artist_tax when it fires
+    add_action( 'init', 'create_artist_tax', 0 );
+
+    //create two taxonomies, Artist and writers for the post type "book"
+    function create_artist_tax() 
+    {
+      // Add new taxonomy, make it hierarchical (like categories)
+      $labels = array(
+        'name' => _x( 'Artists', 'taxonomy general name' ),
+        'singular_name' => _x( 'Artist', 'taxonomy singular name' ),
+        'search_items' =>  __( 'Search Artist' ),
+        'all_items' => __( 'All Artist' ),
+        'parent_item' => __( 'Parent Artist' ),
+        'parent_item_colon' => __( 'Parent Artist:' ),
+        'edit_item' => __( 'Edit Artist' ), 
+        'update_item' => __( 'Update Artist' ),
+        'add_new_item' => __( 'Add New Artist' ),
+        'new_item_name' => __( 'New Artist Name' ),
+        'menu_name' => __( 'Artist' ),
+      );    
+
+      register_taxonomy('artist_tax', array('album'), array(
+        'hierarchical' => true,
+        'labels' => $labels,
+        'show_menu' => false,
+        'query_var' => true,
+        'rewrite' => array( 'slug' => 'Artist' ),
+      ));
+    }
+
+    add_action('save_post', 'correlate_artist_taxonomy');
+    function correlate_artist_taxonomy( $post_id ){
+
+        if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) 
+            return $post_id;
+
+        if ( 'artist' == $_POST['post_type'] ){
+            if (!wp_is_post_revision($post_id)){
+                if (!term_exists( $_POST["post_title"], 'artist_tax' )){
+
+                    $termid = wp_insert_term( $_POST["post_title"], 'artist_tax' );
+
+                }
+            }
+        }
+
+    }
+             
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -209,7 +258,20 @@ function album_init()
         	add_meta_box('postimagediv', __('Album Cover'), 'post_thumbnail_meta_box', 'album', 'normal', 'high');
         }
 
-    }      
+    }  
+    function album_artist_connection() {
+        // Make sure the Posts 2 Posts plugin is active.
+        if ( !function_exists( 'p2p_register_connection_type' ) )
+            return;
+
+        p2p_register_connection_type( array(
+            'name' => 'album_to_artist',
+            'from' => 'artist',
+            'to' => 'album'
+        ) );
+    }
+    add_action( 'wp_loaded', 'album_artist_connection' );
+    
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -474,13 +536,24 @@ global $menu;
 add_action('admin_menu', 'remove_menus');
 
 function the_album_artist($album_id){
-    echo get_the_album_artist($album_id);
-    
+    $artist_id = get_the_album_artist($album_id);
+    if( !$artist_id ){
+        echo 'Various Artists';
+    }
+    $artist = get_post($artist_id);
+
+    echo $artist->post_title;
 }   
 
     function get_the_album_artist($album_id){
-        $album = get_post($album_id);
-        return "Oax";
+        $connected = p2p_type( 'album_to_artist' )->get_connected( $album_id );
+
+        clog($connected);
+
+        $artist = $connected->posts[0]->ID;  
+        clog($artist);
+        clog($connected->posts[0]->ID);
+        return $artist;
     }   
 
 if (!is_admin()) add_action( 'wp_print_scripts', 'syc_add_javascript' );

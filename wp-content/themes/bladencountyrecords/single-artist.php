@@ -46,6 +46,39 @@
                 	</div><!--/.column-->
                 	<div class="fix"></div>
 				</div>
+
+				<div id="artist-releases">
+					<h2>Releases</h2>
+					<?php 
+					$connected = new WP_Query( array(
+						  'connected_type' => 'album_to_artist',
+						  'connected_items' => get_queried_object_id(),
+						) );
+					if( $connected->have_posts() ) :
+							
+						while ( $connected->have_posts() ) : $connected->the_post(); ?>
+				        <div class="album-art">
+				            <a href="<?php echo get_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases"><?php the_post_thumbnail(array(84,84)); ?></a>
+				        </div>
+				        <div class="album-details">
+				            <a href="<?php echo get_permalink(get_the_album_artist(get_the_ID())); ?>#artist-releases" class="album-title"><strong><?php the_album_artist(get_the_ID()); ?></strong><br>
+				            <em><?php the_title(); ?></em></a><br>
+				        </div>
+				        <div class="store-links">
+				            <?php get_template_part('paypal-button'); ?>
+				        </div>
+
+				        <?php 
+				        endwhile; 
+
+			        wp_reset_postdata();
+			        endif; ?>
+
+
+
+
+					
+				</div>
                                 
             </div><!-- .post -->
                                                            

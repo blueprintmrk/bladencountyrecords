@@ -45,11 +45,11 @@ p + p {
     margin-bottom: 10px;
 }
 .row1{
-    background-color: #444;
+    background-color: #E3E0DB;
 }
 body{
-    background: #333;
-    color:#eee;
+    background: #F3F0EB;
+    color: #333;
     font-family: arial,helvetica,sans-serif;
     font-size:12px;
     line-height: 1.5em;
@@ -59,7 +59,7 @@ body{
 a, a:link, a:visited{
     -moz-outline-style:none;
     text-decoration: none;      
-    color: #74add3;
+    color: #549De3;
     transition:color 0.2s ease-in, background-color 0.3s;
     -moz-transition:color 0.2s ease-in, background-color 0.3s;
     -webkit-transition:color 0.2s ease-in, background-color 0.3s;
@@ -67,7 +67,7 @@ a, a:link, a:visited{
 }
 
 a:hover{
-  color: #cfecff;
+  color: #74add3;
 
 }
 
@@ -124,13 +124,14 @@ a:hover img{
 
 /* --- header --- */
 #header-wrap{
-  background: #000;
+  background: #333;
   width: 100%;
   overflow: visible;
+  box-shadow: 0 0 10px #000;
 }
 #header{ 
   position: relative;
-  height: 170px;
+  height: 150px;
 }
 .site-title {
   width: 60px;
@@ -162,7 +163,8 @@ a:hover img{
 #featured-release img, .release-box img{
     width:82px;
     margin-bottom:5px;
-    border: 1px solid #ddd;
+    border: 1px solid #333;
+    box-shadow: 0 0 3px #000;
 }
 #featured-release .album-art, .release-box .album-art{
     float: left;
@@ -181,7 +183,6 @@ a:hover img{
     font-weight: normal;
 }
 #featured-release a{
-    color: #ddd;
 }
 
 #featured-release a:hover{
@@ -216,7 +217,6 @@ a:hover img{
 }
 #nav ul li a{
     margin-right: 15px;
-    color: #fff;
     text-transform: uppercase;
     height: 22px;
     display: block;
@@ -284,7 +284,6 @@ background-position: -392px -30px;
 }
 #social a{
     display: block; 
-    color: #fff;
     text-transform: uppercase;
     font-weight: bold;
 }
@@ -333,7 +332,7 @@ h1.title{
 .section h2,
 .widget h2 {
     color: #ddd;
-    background-color: #222;
+    background-color: #333;
     padding: 5px 20px;
     margin-left: -5px;
     font-weight: bold;
@@ -430,7 +429,7 @@ a.more-link:hover{
 /* --- news --- */
 .post{
     padding: 10px 10px 15px;
-    background-color: #444;
+    background-color: #56524C;
     color: #ddd;
     min-height: 115px;
     margin: 15px 0; 
@@ -595,9 +594,9 @@ a.event-name:hover{ text-decoration: underline; }
     width: auto;
     float: right;
     margin: 5px 0;
+    padding: 5px 8px;
 }
 #sidebar-mailing-list p, #sidebar-mailing-list label{
-    color: #ddd;
 }
 
 /* --- about --- */
@@ -639,4 +638,5 @@ input.button{
     text-transform: uppercase;
     font-family:'Helvetica Neue',Helvetica,Arial;
     border: 1px solid #999;
+    box-shadow: 1px 0 1px #aaa;
 }
